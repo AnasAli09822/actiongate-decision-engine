@@ -4,20 +4,24 @@ from app.engine.evidence import EvidenceAnalysis
 from app.engine.types import DomainAssessment
 from app.schemas import CostLevel, DecisionRequest
 
-POLICY_VERSION = "refund-approval-v2.0"
-REQUIRED_EVIDENCE_KINDS = ["payment_ledger", "order_record"]
+POLICY_VERSION = "refund-approval-v2.1"
+REQUIRED_CLAIMS = ["payment_settled", "order_exists", "chargeback_open", "legal_hold", "customer_risk"]
 AUTO_EXECUTE_LIMIT = 500.0
 MANUAL_REVIEW_LIMIT = 5000.0
 
 
-def required_evidence(_: DecisionRequest) -> list[str]:
-    return REQUIRED_EVIDENCE_KINDS.copy()
+def required_claims(request: DecisionRequest) -> list[str]:
+    claims = REQUIRED_CLAIMS.copy()
+    reason = str(request.action.parameters.get("reason", "")).strip().lower()
+    if reason == "duplicate_charge":
+        claims.append("duplicate_charge")
+    return claims
 
 
 def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssessment:
     action = request.action
-    attrs = request.context.attributes
     params = action.parameters
+    policy_claims = required_claims(request)
 
     if action.type != "refund":
         return DomainAssessment(
@@ -25,7 +29,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             reversibility_score=0.10,
             cost_of_error=CostLevel.HIGH,
             refusal_reasons=["UNSUPPORTED_REFUND_ACTION"],
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             risk_factors=["UNSUPPORTED_ACTION"],
         )
 
@@ -57,7 +61,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             reversibility_score=0.10,
             cost_of_error=CostLevel.HIGH,
             refusal_reasons=["NON_POSITIVE_REFUND_AMOUNT"],
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             risk_factors=risk_factors + ["INVALID_FINANCIAL_AMOUNT"],
         )
 
@@ -67,24 +71,21 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             reversibility_score=0.10,
             cost_of_error=CostLevel.HIGH,
             refusal_reasons=["ORDER_NOT_FOUND_IN_AUTHORITATIVE_RECORD"],
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             risk_factors=risk_factors + ["MISSING_AUTHORITATIVE_ORDER"],
             facts=evidence.facts,
         )
 
-    chargeback_open = evidence.facts.get("chargeback_open", attrs.get("chargeback_open"))
-    legal_hold = evidence.facts.get("legal_hold", attrs.get("legal_hold"))
-    payment_settled = evidence.facts.get(
-        "payment_settled",
-        attrs.get("payment_status") == "settled" if "payment_status" in attrs else None,
-    )
+    chargeback_open = evidence.facts.get("chargeback_open")
+    legal_hold = evidence.facts.get("legal_hold")
+    payment_settled = evidence.facts.get("payment_settled")
 
     if chargeback_open is True:
         return DomainAssessment(
             base_risk=0.92,
             reversibility_score=0.10,
             cost_of_error=CostLevel.HIGH,
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             refusal_reasons=["OPEN_CHARGEBACK_BLOCKS_REFUND"],
             risk_factors=risk_factors + ["OPEN_CHARGEBACK"],
             facts=evidence.facts,
@@ -95,7 +96,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             base_risk=0.98,
             reversibility_score=0.05,
             cost_of_error=CostLevel.CRITICAL,
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             refusal_reasons=["LEGAL_HOLD_BLOCKS_REFUND"],
             risk_factors=risk_factors + ["LEGAL_HOLD"],
             facts=evidence.facts,
@@ -106,7 +107,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             base_risk=0.48,
             reversibility_score=0.20,
             cost_of_error=CostLevel.MEDIUM,
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             missing_information=missing,
             defer_reasons=["PAYMENT_SETTLEMENT_PENDING"],
             risk_factors=risk_factors + ["SETTLEMENT_PENDING"],
@@ -129,7 +130,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
         escalation.append("SENIOR_FINANCE_REVIEW_REQUIRED")
         risk_factors.append("HIGH_FINANCIAL_EXPOSURE")
 
-    customer_risk = evidence.facts.get("customer_risk", attrs.get("customer_risk"))
+    customer_risk = evidence.facts.get("customer_risk")
     if customer_risk == "high":
         base_risk += 0.18
         escalation.append("HIGH_RISK_CUSTOMER")
@@ -139,7 +140,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
         base_risk=min(base_risk, 1.0),
         reversibility_score=0.25,
         cost_of_error=CostLevel.HIGH if numeric_amount > AUTO_EXECUTE_LIMIT else CostLevel.MEDIUM,
-        required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+        required_claims=policy_claims,
         missing_information=list(dict.fromkeys(missing)),
         escalation_reasons=list(dict.fromkeys(escalation)),
         reason_codes=list(dict.fromkeys(reasons)),

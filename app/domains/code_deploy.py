@@ -4,17 +4,18 @@ from app.engine.evidence import EvidenceAnalysis
 from app.engine.types import DomainAssessment
 from app.schemas import CostLevel, DecisionRequest
 
-POLICY_VERSION = "code-deploy-v2.0"
-REQUIRED_EVIDENCE_KINDS = ["ci_results", "deployment_manifest"]
+POLICY_VERSION = "code-deploy-v2.1"
+REQUIRED_CLAIMS = ["ci_status", "target_environment", "rollback_available", "change_risk", "database_migration", "incident_active"]
 
 
-def required_evidence(_: DecisionRequest) -> list[str]:
-    return REQUIRED_EVIDENCE_KINDS.copy()
+def required_claims(_: DecisionRequest) -> list[str]:
+    return REQUIRED_CLAIMS.copy()
 
 
 def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssessment:
     action = request.action
-    attrs = request.context.attributes
+
+    policy_claims = required_claims(request)
 
     if action.type != "deploy":
         return DomainAssessment(
@@ -22,27 +23,20 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             reversibility_score=0.05,
             cost_of_error=CostLevel.CRITICAL,
             refusal_reasons=["UNSUPPORTED_DEPLOY_ACTION"],
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             risk_factors=["UNSUPPORTED_ACTION"],
         )
 
     missing: list[str] = []
     risk_factors: list[str] = ["PRODUCTION_CHANGE"]
 
-    tests_status = evidence.facts.get("ci_status", attrs.get("tests_status"))
-    rollback_available = evidence.facts.get("rollback_available", attrs.get("rollback_available"))
-    change_risk = str(evidence.facts.get("change_risk", attrs.get("change_risk", "unknown"))).lower()
-    db_migration = bool(evidence.facts.get("database_migration", attrs.get("database_migration", False)))
-    backup_available = evidence.facts.get("backup_available", attrs.get("backup_available"))
-    incident_active = bool(evidence.facts.get("incident_active", attrs.get("incident_active", False)))
-    approved_hotfix = bool(evidence.facts.get("approved_hotfix", attrs.get("approved_hotfix", False)))
-
-    if tests_status is None:
-        missing.append("tests_status")
-    if rollback_available is None:
-        missing.append("rollback_available")
-    if change_risk == "unknown":
-        missing.append("change_risk")
+    tests_status = evidence.facts.get("ci_status")
+    rollback_available = evidence.facts.get("rollback_available")
+    change_risk = str(evidence.facts.get("change_risk", "unknown")).lower()
+    db_migration = bool(evidence.facts.get("database_migration", False))
+    backup_available = evidence.facts.get("backup_available")
+    incident_active = bool(evidence.facts.get("incident_active", False))
+    approved_hotfix = bool(evidence.facts.get("approved_hotfix", False))
 
     target_environment = str(evidence.facts.get("target_environment", "")).strip().lower()
     requested_environment = str(request.context.environment).strip().lower()
@@ -51,7 +45,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             base_risk=0.98,
             reversibility_score=0.05,
             cost_of_error=CostLevel.CRITICAL,
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             refusal_reasons=["DEPLOYMENT_MANIFEST_TARGET_MISMATCH"],
             risk_factors=risk_factors + ["TARGET_MISMATCH"],
             facts=evidence.facts,
@@ -62,18 +56,21 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             base_risk=0.98,
             reversibility_score=0.25 if rollback_available else 0.05,
             cost_of_error=CostLevel.CRITICAL,
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             refusal_reasons=["TESTS_FAILED"],
             risk_factors=risk_factors + ["FAILED_CI"],
             facts=evidence.facts,
         )
+
+    if db_migration and backup_available is None:
+        missing.append("evidence:backup_available")
 
     if db_migration and rollback_available is False and backup_available is False:
         return DomainAssessment(
             base_risk=1.0,
             reversibility_score=0.02,
             cost_of_error=CostLevel.CRITICAL,
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             refusal_reasons=["IRREVERSIBLE_MIGRATION_WITHOUT_BACKUP"],
             risk_factors=risk_factors + ["IRREVERSIBLE_DATABASE_CHANGE", "NO_BACKUP"],
             facts=evidence.facts,
@@ -111,7 +108,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
         base_risk=base_risk,
         reversibility_score=reversibility,
         cost_of_error=CostLevel.CRITICAL,
-        required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+        required_claims=policy_claims,
         missing_information=missing,
         defer_reasons=defer,
         escalation_reasons=escalation,

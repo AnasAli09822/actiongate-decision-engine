@@ -28,6 +28,55 @@ def _evidence(
         "reference": reference,
     }
 
+def _refund_safety_evidence(prefix: str) -> list[dict]:
+    return [
+        _evidence(
+            id=f"ev_ledger_{prefix}_chargeback",
+            source="payments_ledger",
+            kind="payment_ledger",
+            claim="chargeback_open",
+            value=False,
+            reference=f"ledger://payments/{prefix}",
+        ),
+        _evidence(
+            id=f"ev_risk_{prefix}_legal_hold",
+            source="risk_service",
+            kind="risk_record",
+            claim="legal_hold",
+            value=False,
+            reference=f"risk://payments/{prefix}",
+        ),
+        _evidence(
+            id=f"ev_risk_{prefix}_customer",
+            source="risk_service",
+            kind="risk_record",
+            claim="customer_risk",
+            value="low",
+            reference=f"risk://customers/{prefix}",
+        ),
+    ]
+
+
+def _deploy_safety_evidence(prefix: str) -> list[dict]:
+    return [
+        _evidence(
+            id=f"ev_release_{prefix}_migration",
+            source="deployment_service",
+            kind="release_metadata",
+            claim="database_migration",
+            value=False,
+            reference=f"deploy://release/{prefix}",
+        ),
+        _evidence(
+            id=f"ev_incident_{prefix}_active",
+            source="incident_service",
+            kind="incident_status",
+            claim="incident_active",
+            value=False,
+            reference=f"incident://deployments/{prefix}",
+        ),
+    ]
+
 
 def build_scenarios() -> list[Scenario]:
     return [
@@ -100,6 +149,7 @@ def build_scenarios() -> list[Scenario]:
                                 value=True,
                                 reference="orders://2201",
                             ),
+                            *_refund_safety_evidence("2201"),
                         ],
                     },
                 },
@@ -155,6 +205,7 @@ def build_scenarios() -> list[Scenario]:
                                 value="medium",
                                 reference="deploy://release/7e91d3f",
                             ),
+                            *_deploy_safety_evidence("7e91d3f"),
                         ],
                     },
                 },
@@ -206,6 +257,7 @@ def build_scenarios() -> list[Scenario]:
                                 value=True,
                                 reference="orders://8832",
                             ),
+                            *_refund_safety_evidence("8832"),
                         ],
                     },
                 },
@@ -261,6 +313,7 @@ def build_scenarios() -> list[Scenario]:
                                 value="medium",
                                 reference="deploy://release/badc0de",
                             ),
+                            *_deploy_safety_evidence("badc0de"),
                         ],
                     },
                 },
@@ -321,6 +374,7 @@ def build_scenarios() -> list[Scenario]:
                                 value=True,
                                 reference="ledger://payments/4410",
                             ),
+                            *_refund_safety_evidence("4410"),
                         ],
                     },
                 },
