@@ -126,8 +126,14 @@ def test_irreversible_database_migration_without_backup_is_refused():
     rollback = next(e for e in payload.context.evidence if e.claim == "rollback_available")
     ci.value = "passed"
     rollback.value = False
-    payload.context.attributes["database_migration"] = True
-    payload.context.attributes["backup_available"] = False
+    migration = next(e for e in payload.context.evidence if e.claim == "database_migration")
+    migration.value = True
+    template = next(e for e in payload.context.evidence if e.claim == "change_risk")
+    backup = template.model_copy(deep=True)
+    backup.id = "ev_manifest_backup"
+    backup.claim = "backup_available"
+    backup.value = False
+    payload.context.evidence.append(backup)
     result = evaluate(payload)
     assert result.decision.value == "refuse"
     assert "IRREVERSIBLE_MIGRATION_WITHOUT_BACKUP" in result.reason_codes
@@ -141,14 +147,14 @@ def test_ticket_route_conflicting_with_ticket_topic_asks():
     assert "PROPOSED_ROUTE_CONFLICTS_WITH_TICKET_EVIDENCE" in result.reason_codes
 
 
-def test_missing_required_evidence_asks_for_exact_kinds():
+def test_missing_required_evidence_asks_for_exact_claims():
     payload = scenario_by_id("refund-high-value").request.model_copy(deep=True)
     payload.action.parameters["amount"] = 120
     payload.context.evidence = []
     result = evaluate(payload)
     assert result.decision.value == "ask"
-    assert "evidence:order_record" in result.missing_information
-    assert "evidence:payment_ledger" in result.missing_information
+    assert "evidence:order_exists" in result.missing_information
+    assert "evidence:payment_settled" in result.missing_information
 
 
 def test_unregistered_source_is_rejected_and_cannot_satisfy_required_evidence():
@@ -159,7 +165,7 @@ def test_unregistered_source_is_rejected_and_cannot_satisfy_required_evidence():
         ledger.source = "agent_claimed_ledger"
     result = evaluate(payload)
     assert all(ledger.id in result.evidence_rejected for ledger in ledgers)
-    assert "evidence:payment_ledger" in result.missing_information
+    assert "evidence:payment_settled" in result.missing_information
     assert result.decision.value == "ask"
 
 
@@ -171,7 +177,7 @@ def test_source_cannot_masquerade_as_another_evidence_kind():
         ledger.source = "support_platform"
     result = evaluate(payload)
     assert all(ledger.id in result.evidence_rejected for ledger in ledgers)
-    assert "evidence:payment_ledger" in result.missing_information
+    assert "evidence:payment_settled" in result.missing_information
 
 
 def test_stale_ci_evidence_is_rejected():
@@ -180,7 +186,7 @@ def test_stale_ci_evidence_is_rejected():
     ci.observed_at = datetime.now(timezone.utc) - timedelta(days=8)
     result = evaluate(payload)
     assert ci.id in result.evidence_rejected
-    assert "evidence:ci_results" in result.missing_information
+    assert "evidence:ci_status" in result.missing_information
     assert result.decision.value == "ask"
 
 
@@ -207,3 +213,67 @@ def test_repeated_input_preserves_decision_semantics():
     assert first.reason_codes == second.reason_codes
     assert first.policy_version == second.policy_version
     assert first.decision_id != second.decision_id
+
+
+def test_registered_source_cannot_assert_unapproved_claim():
+    payload = scenario_by_id("deploy-tests-running").request.model_copy(deep=True)
+    ci = next(e for e in payload.context.evidence if e.claim == "ci_status")
+    ci.claim = "tests_green"
+    ci.value = True
+    result = evaluate(payload)
+    assert ci.id in result.evidence_rejected
+    assert "evidence:ci_status" in result.missing_information
+    assert result.decision.value == "ask"
+
+
+def test_duplicate_refund_requires_duplicate_charge_evidence():
+    payload = scenario_by_id("refund-high-value").request.model_copy(deep=True)
+    payload.action.parameters["amount"] = 120
+    payload.context.evidence = [e for e in payload.context.evidence if e.claim != "duplicate_charge"]
+    result = evaluate(payload)
+    assert result.decision.value == "ask"
+    assert "evidence:duplicate_charge" in result.missing_information
+
+
+def test_authoritative_legal_hold_cannot_be_overridden_by_context():
+    payload = scenario_by_id("refund-high-value").request.model_copy(deep=True)
+    payload.action.parameters["amount"] = 120
+    payload.context.attributes["legal_hold"] = False
+    legal_hold = next(e for e in payload.context.evidence if e.claim == "legal_hold")
+    legal_hold.value = True
+    result = evaluate(payload)
+    assert result.decision.value == "refuse"
+    assert "LEGAL_HOLD_BLOCKS_REFUND" in result.reason_codes
+
+
+def test_defer_does_not_hide_unrelated_missing_information():
+    payload = scenario_by_id("deploy-tests-running").request.model_copy(deep=True)
+    payload.context.evidence = [
+        e for e in payload.context.evidence if e.claim != "target_environment"
+    ]
+    result = evaluate(payload)
+    assert result.decision.value == "ask"
+    assert "evidence:target_environment" in result.missing_information
+
+
+def test_refund_requires_negative_blocker_and_risk_checks_before_execute():
+    payload = scenario_by_id("refund-high-value").request.model_copy(deep=True)
+    payload.action.parameters["amount"] = 120
+    payload.context.evidence = [
+        e for e in payload.context.evidence if e.claim not in {"legal_hold", "chargeback_open", "customer_risk"}
+    ]
+    result = evaluate(payload)
+    assert result.decision.value == "ask"
+    assert "evidence:legal_hold" in result.missing_information
+    assert "evidence:chargeback_open" in result.missing_information
+    assert "evidence:customer_risk" in result.missing_information
+
+
+def test_close_ticket_requires_safety_and_vip_facts():
+    payload = scenario_by_id("ticket-clear-route").request.model_copy(deep=True)
+    payload.action.type = "close_ticket"
+    payload.action.parameters = {}
+    result = evaluate(payload)
+    assert result.decision.value == "ask"
+    assert "evidence:safety_related" in result.missing_information
+    assert "evidence:vip_customer" in result.missing_information

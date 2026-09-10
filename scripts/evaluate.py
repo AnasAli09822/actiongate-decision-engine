@@ -64,8 +64,61 @@ def build_cases() -> list[EvalCase]:
 
     high_risk_customer = case("refund-high-value")
     high_risk_customer.action.parameters["amount"] = 120
-    high_risk_customer.context.attributes["customer_risk"] = "high"
+    risk = next(e for e in high_risk_customer.context.evidence if e.claim == "customer_risk")
+    risk.value = "high"
     cases.append(EvalCase("high-risk-customer", "escalate", high_risk_customer))
+
+    missing_refund_controls = case("refund-high-value")
+    missing_refund_controls.action.parameters["amount"] = 120
+    missing_refund_controls.context.evidence = [
+        e for e in missing_refund_controls.context.evidence
+        if e.claim not in {"legal_hold", "chargeback_open", "customer_risk"}
+    ]
+    cases.append(EvalCase("refund-missing-safety-controls", "ask", missing_refund_controls))
+
+    running_ci_missing_target = case("deploy-tests-running")
+    running_ci_missing_target.context.evidence = [
+        e for e in running_ci_missing_target.context.evidence if e.claim != "target_environment"
+    ]
+    cases.append(EvalCase("running-ci-missing-target", "ask", running_ci_missing_target))
+
+    close_ticket_missing_safety = case("ticket-clear-route")
+    close_ticket_missing_safety.action.type = "close_ticket"
+    close_ticket_missing_safety.action.parameters = {}
+    cases.append(EvalCase("close-ticket-missing-safety", "ask", close_ticket_missing_safety))
+
+    close_ticket_safety = case("ticket-clear-route")
+    close_ticket_safety.action.type = "close_ticket"
+    close_ticket_safety.action.parameters = {}
+    template = close_ticket_safety.context.evidence[0]
+    vip = template.model_copy(deep=True)
+    vip.id = "ev_ticket_vip_false"
+    vip.claim = "vip_customer"
+    vip.value = False
+    safety = template.model_copy(deep=True)
+    safety.id = "ev_ticket_safety_true"
+    safety.claim = "safety_related"
+    safety.value = True
+    close_ticket_safety.context.evidence.extend([vip, safety])
+    cases.append(EvalCase("safety-ticket-close", "escalate", close_ticket_safety))
+
+    legal_hold_refund = case("refund-high-value")
+    legal_hold_refund.action.parameters["amount"] = 120
+    legal_hold = next(e for e in legal_hold_refund.context.evidence if e.claim == "legal_hold")
+    legal_hold.value = True
+    cases.append(EvalCase("refund-legal-hold", "refuse", legal_hold_refund))
+
+    irreversible_migration = case("deploy-tests-running")
+    next(e for e in irreversible_migration.context.evidence if e.claim == "ci_status").value = "passed"
+    next(e for e in irreversible_migration.context.evidence if e.claim == "rollback_available").value = False
+    next(e for e in irreversible_migration.context.evidence if e.claim == "database_migration").value = True
+    template = next(e for e in irreversible_migration.context.evidence if e.claim == "change_risk")
+    backup = template.model_copy(deep=True)
+    backup.id = "ev_eval_backup_false"
+    backup.claim = "backup_available"
+    backup.value = False
+    irreversible_migration.context.evidence.append(backup)
+    cases.append(EvalCase("irreversible-migration-no-backup", "refuse", irreversible_migration))
 
     return cases
 
