@@ -6,10 +6,11 @@ from app.engine.evidence import EvidenceAnalysis
 from app.engine.types import DomainAssessment
 from app.schemas import CostLevel, DecisionRequest
 
-POLICY_VERSION = "refund-approval-v2.2"
+POLICY_VERSION = "refund-approval-v2.3"
 REQUIRED_CLAIMS = ["payment_settled", "order_exists", "chargeback_open", "legal_hold", "customer_risk"]
 AUTO_EXECUTE_LIMIT = Decimal("500.00")
 MANUAL_REVIEW_LIMIT = Decimal("5000.00")
+SUPPORTED_REASONS = frozenset({"duplicate_charge"})
 
 
 def required_claims(request: DecisionRequest) -> list[str]:
@@ -143,6 +144,17 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
         )
 
     reason_normalized = str(reason or "").strip().lower()
+    if reason_normalized and reason_normalized not in SUPPORTED_REASONS:
+        return DomainAssessment(
+            base_risk=0.95,
+            reversibility_score=0.10,
+            cost_of_error=CostLevel.HIGH,
+            refusal_reasons=["UNSUPPORTED_REFUND_REASON"],
+            required_claims=policy_claims,
+            risk_factors=risk_factors + ["UNSUPPORTED_REFUND_REASON"],
+            facts=evidence.facts,
+        )
+
     if reason_normalized == "duplicate_charge" and evidence.facts.get("duplicate_charge") is False:
         escalation.append("REFUND_REASON_NOT_SUPPORTED_BY_LEDGER")
         reasons.append("PROPOSED_ACTION_CONFLICTS_WITH_RESOLVED_EVIDENCE")

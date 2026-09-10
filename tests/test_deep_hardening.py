@@ -96,3 +96,13 @@ def test_refund_rejects_non_finite_amounts(amount):
     result = evaluate(payload)
     assert result.decision.value == "refuse"
     assert "NON_FINITE_REFUND_AMOUNT" in result.reason_codes
+
+
+def test_unknown_refund_reason_cannot_bypass_reason_specific_evidence():
+    payload = scenario_by_id("refund-high-value").request.model_copy(deep=True)
+    payload.action.parameters["amount"] = 120
+    payload.action.parameters["reason"] = "manual_override"
+    payload.context.evidence = [e for e in payload.context.evidence if e.claim != "duplicate_charge"]
+    result = evaluate(payload)
+    assert result.decision.value == "refuse"
+    assert "UNSUPPORTED_REFUND_REASON" in result.reason_codes
