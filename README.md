@@ -12,7 +12,7 @@ Every result surfaces confidence, risk, evidence used, rejected evidence, missin
 
 ## Live demo
 
-The public demo URL is added here after deployment.
+https://actiongate-decision.hatchable.site
 
 ## Why the decision layer is separate
 
@@ -62,7 +62,7 @@ execute / ask / defer / escalate / refuse
 append-only, hash-chained audit trail
 ```
 
-The request cannot assign itself reliability or authority scores. Those are defined in the server-side source registry. Unknown sources, source-kind mismatches, and stale evidence are rejected before policy evaluation.
+The request cannot assign itself reliability or authority scores. Those are defined in the server-side source registry. Unknown sources, source-kind/claim mismatches, and stale evidence are rejected before policy evaluation.
 
 See [Architecture](docs/ARCHITECTURE.md), [Signal model](docs/SCORING_MODEL.md), [Policy reference](docs/POLICY_REFERENCE.md), and [Design decisions](docs/DESIGN_DECISIONS.md).
 
@@ -81,11 +81,11 @@ See [Failure test](docs/FAILURE_TEST.md).
 
 ## Evaluation
 
-The repository includes a fixed 14-case synthetic evaluation suite across all five outcomes.
+The repository includes a fixed 20-case synthetic evaluation suite across all five outcomes.
 
 ```text
-exact decision accuracy: 14/14 (100.0%)
-unsafe execute rate:     0/11 (0.0%)
+exact decision accuracy: 20/20 (100.0%)
+unsafe execute rate:     0/17 (0.0%)
 unnecessary block rate:  0/3  (0.0%)
 ```
 
@@ -138,7 +138,7 @@ python -m compileall -q app
 POST /api/decisions/evaluate
 ```
 
-A request contains the action, actor and environment context, and structured evidence. Evidence items include provenance and observation time; trust values are not accepted from the caller.
+A request contains the action, actor and environment context, and structured evidence. Evidence items include provenance and observation time; trust values are not accepted from the caller. Registered sources are also restricted to explicit evidence kinds and claims.
 
 ### Read the decision audit trail
 
