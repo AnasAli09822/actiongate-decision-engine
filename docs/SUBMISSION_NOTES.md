@@ -1,5 +1,9 @@
 # Submission notes
 
+## Live demo
+
+https://actiongate-decision.hatchable.site
+
 ## What to inspect
 
 - `app/engine/source_registry.py` — server-controlled evidence trust.
