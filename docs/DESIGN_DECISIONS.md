@@ -6,7 +6,7 @@ A model can normalize unstructured intent upstream, but the final decision path 
 
 ## Source trust is not request data
 
-Reliability and authority are configuration owned by the decision service. Allowing an agent to submit those values would let a compromised caller inflate its own evidence.
+Reliability, authority, permitted evidence kinds, and permitted claims are configuration owned by the decision service. Allowing an agent to submit those values would let a compromised caller inflate or repurpose its own evidence.
 
 ## The five outcomes are control states
 

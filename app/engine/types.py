@@ -11,7 +11,7 @@ class DomainAssessment:
     base_risk: float
     reversibility_score: float
     cost_of_error: CostLevel
-    required_evidence_kinds: list[str] = field(default_factory=list)
+    required_claims: list[str] = field(default_factory=list)
     missing_information: list[str] = field(default_factory=list)
     defer_reasons: list[str] = field(default_factory=list)
     escalation_reasons: list[str] = field(default_factory=list)

@@ -2,18 +2,18 @@
 
 Domain policy is explicit and versioned in code. Scores support decisions but never override hard rules.
 
-## Ticket triage — `ticket-triage-v2.0`
+## Ticket triage — `ticket-triage-v2.1`
 
 - Supported actions: `route_ticket`, `close_ticket`.
-- Registered `ticket_content` evidence is required.
+- A credible `ticket_topic` claim from a registered support source is required.
 - Routing requires a destination and ticket text.
 - A proposed route that disagrees with the strongest ticket-topic evidence returns `ask`.
 - Closing a VIP or safety-related ticket escalates.
 
-## Refund approval — `refund-approval-v2.0`
+## Refund approval — `refund-approval-v2.1`
 
 - Supported action: `refund`.
-- Registered payment-ledger and order-record evidence are required.
+- Credible `payment_settled`, `order_exists`, `chargeback_open`, `legal_hold`, and `customer_risk` claims are required; duplicate-charge refunds additionally require a credible `duplicate_charge` claim.
 - Amount must be positive and currency and reason must be supplied.
 - Legal holds, open chargebacks, and authoritative evidence that the order does not exist are hard refusals.
 - Unsettled payment state returns `defer`.
@@ -21,10 +21,10 @@ Domain policy is explicit and versioned in code. Scores support decisions but ne
 - Refunds above $500 exceed autonomous authority and escalate.
 - Refunds above $5,000 additionally require senior finance review.
 
-## Code deploy — `code-deploy-v2.0`
+## Code deploy — `code-deploy-v2.1`
 
 - Supported action: `deploy`.
-- Registered CI results and deployment-manifest evidence are required.
+- Credible `ci_status`, `target_environment`, `rollback_available`, `change_risk`, `database_migration`, and `incident_active` claims are required from registered sources.
 - Failed CI is a hard refusal.
 - A deployment-manifest target mismatch is a hard refusal.
 - An irreversible database migration without a backup is a hard refusal.
@@ -38,9 +38,9 @@ hard refusal
     ↓
 authoritative evidence conflict → escalate
     ↓
-pending truth → defer
-    ↓
 missing / unresolved fact → ask
+    ↓
+pending truth → defer
     ↓
 authority or impact boundary → escalate
     ↓

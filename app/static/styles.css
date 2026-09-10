@@ -147,6 +147,9 @@ textarea {
 .event-stage { font-size: 12px; font-weight: 700; }
 .event-summary { color: var(--soft); font-size: 11px; line-height: 1.5; word-break: break-word; }
 .hash { display: block; color: #6f7680; margin-top: 5px; font: 9px "SFMono-Regular", Consolas, monospace; }
+.audit-details { margin-top: 7px; }
+.audit-details summary { cursor: pointer; color: var(--muted); font-size: 10px; user-select: none; }
+.audit-details pre { max-height: 280px; overflow: auto; margin: 7px 0 0; padding: 9px; border: 1px solid var(--line); border-radius: 7px; background: #0e1014; color: #b7bec8; font: 9px/1.5 "SFMono-Regular", Consolas, monospace; white-space: pre-wrap; }
 .empty { color: var(--muted); padding: 12px 0; font-size: 12px; }
 
 footer { display: flex; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 11px; padding: 16px 2px 0; }

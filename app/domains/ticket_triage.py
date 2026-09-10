@@ -4,17 +4,21 @@ from app.engine.evidence import EvidenceAnalysis
 from app.engine.types import DomainAssessment
 from app.schemas import CostLevel, DecisionRequest
 
-POLICY_VERSION = "ticket-triage-v2.0"
-REQUIRED_EVIDENCE_KINDS = ["ticket_content"]
+POLICY_VERSION = "ticket-triage-v2.1"
+REQUIRED_CLAIMS = ["ticket_topic"]
 
 
-def required_evidence(_: DecisionRequest) -> list[str]:
-    return REQUIRED_EVIDENCE_KINDS.copy()
+def required_claims(request: DecisionRequest) -> list[str]:
+    claims = REQUIRED_CLAIMS.copy()
+    if request.action.type == "close_ticket":
+        claims.extend(["vip_customer", "safety_related"])
+    return claims
 
 
 def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssessment:
     action = request.action
     attrs = request.context.attributes
+    policy_claims = required_claims(request)
 
     if action.type not in {"route_ticket", "close_ticket"}:
         return DomainAssessment(
@@ -22,7 +26,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
             reversibility_score=0.20,
             cost_of_error=CostLevel.HIGH,
             refusal_reasons=["UNSUPPORTED_TICKET_ACTION"],
-            required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+            required_claims=policy_claims,
             risk_factors=["UNSUPPORTED_ACTION"],
         )
 
@@ -64,7 +68,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
         base_risk=min(risk, 1.0),
         reversibility_score=reversibility,
         cost_of_error=cost,
-        required_evidence_kinds=REQUIRED_EVIDENCE_KINDS,
+        required_claims=policy_claims,
         missing_information=list(dict.fromkeys(missing)),
         escalation_reasons=list(dict.fromkeys(escalation)),
         reason_codes=list(dict.fromkeys(reasons)),

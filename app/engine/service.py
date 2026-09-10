@@ -25,8 +25,8 @@ def evaluate(request: DecisionRequest) -> DecisionResponse:
         },
     )
 
-    required_kinds = module.required_evidence(request)
-    evidence = analyze_evidence(request.context.evidence, required_kinds)
+    required_claims = module.required_claims(request)
+    evidence = analyze_evidence(request.context.evidence, required_claims)
     append_event(
         decision_id,
         "evidence_analyzed",
@@ -36,7 +36,7 @@ def evaluate(request: DecisionRequest) -> DecisionResponse:
             "rejected_ids": evidence.rejected_ids,
             "conflicts": evidence.conflicts,
             "authoritative_conflicts": evidence.authoritative_conflicts,
-            "missing_required_kinds": evidence.missing_required_kinds,
+            "missing_required_claims": evidence.missing_required_claims,
             "resolved_facts": evidence.facts,
             "fact_sources": evidence.fact_sources,
             "source_assessments": [entry.__dict__ for entry in evidence.evaluated],
@@ -55,7 +55,7 @@ def evaluate(request: DecisionRequest) -> DecisionResponse:
             "defer_reasons": assessment.defer_reasons,
             "escalation_reasons": assessment.escalation_reasons,
             "refusal_reasons": assessment.refusal_reasons,
-            "required_evidence_kinds": assessment.required_evidence_kinds,
+            "required_claims": assessment.required_claims,
             "reason_codes": assessment.reason_codes,
             "risk_factors": assessment.risk_factors,
         },

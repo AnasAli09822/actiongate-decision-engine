@@ -13,7 +13,7 @@ Evidence intake
        |
        +--> source registry (server-controlled trust)
        +--> freshness calculation from observed_at
-       +--> source-kind validation
+       +--> source-kind-claim validation
        +--> conflict detection
        +--> resolved facts
        |
@@ -52,8 +52,8 @@ Append-only, hash-chained audit trail
 
 1. `refuse` — a hard domain boundary is violated.
 2. `escalate` — credible evidence conflicts with an authoritative source.
-3. `defer` — a pending system process is expected to create the missing truth.
-4. `ask` — a fact is missing or unresolved and can be obtained now.
+3. `ask` — a fact is missing or unresolved and can be obtained now.
+4. `defer` — all required facts are present, but a pending system process is expected to change one of them.
 5. `escalate` — the action is plausible but exceeds an autonomous authority or impact limit.
 6. `escalate` — residual risk is too high or evidence coherence is too weak.
 7. `execute` — evidence is sufficient, no hard rule is triggered, and residual risk is within the autonomous execution envelope.
@@ -66,12 +66,13 @@ The request cannot assign its own reliability, authority, or freshness score. Th
 
 For every evidence item the engine:
 
-1. verifies that the source is registered for the claimed evidence kind;
+1. verifies that the source is registered for both the claimed evidence kind and the specific claim;
 2. obtains reliability and authority from the server-side registry;
 3. computes freshness from `observed_at` and the source profile;
 4. rejects unknown, mismatched, or stale evidence;
 5. resolves facts from the strongest credible evidence;
-6. retains credible disagreements as explicit conflicts.
+6. checks required claim coverage, not just evidence-type presence;
+7. retains credible disagreements as explicit conflicts.
 
 The public demo API models evidence that has already passed through authenticated source adapters. Production connectors would authenticate source provenance before creating these evidence items.
 

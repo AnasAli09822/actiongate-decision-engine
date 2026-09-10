@@ -3,13 +3,13 @@
 ## What to inspect
 
 - `app/engine/source_registry.py` — server-controlled evidence trust.
-- `app/engine/evidence.py` — freshness, source-kind validation, fact resolution, and conflict detection.
+- `app/engine/evidence.py` — freshness, source-kind-claim validation, fact resolution, and conflict detection.
 - `app/domains/` — three versioned domain policies.
 - `app/engine/signals.py` — confidence, risk, evidence strength, reversibility, and named risk factors.
 - `app/engine/decision.py` — explicit precedence for all five outcomes.
 - `app/audit.py` — append-only SQLite controls and SHA-256 event chaining.
 - `scripts/evaluate.py` — cross-domain evaluation harness.
-- `tests/` — decision semantics, source spoofing, stale evidence, API behavior, and audit tampering.
+- `tests/` — decision semantics, source spoofing, claim spoofing, stale evidence, API behavior, and audit tampering.
 
 ## AI usage
 

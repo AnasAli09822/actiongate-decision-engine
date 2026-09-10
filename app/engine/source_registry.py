@@ -9,7 +9,7 @@ import math
 class SourceProfile:
     reliability: float
     authority: float
-    allowed_kinds: frozenset[str]
+    allowed_pairs: frozenset[tuple[str, str]]
     freshness_half_life_seconds: int
     max_age_seconds: int
 
@@ -18,65 +18,100 @@ SOURCE_PROFILES: dict[str, SourceProfile] = {
     "support_platform": SourceProfile(
         reliability=0.97,
         authority=0.90,
-        allowed_kinds=frozenset({"ticket_content"}),
+        allowed_pairs=frozenset(
+            {
+                ("ticket_content", "ticket_topic"),
+                ("ticket_content", "safety_related"),
+                ("ticket_content", "vip_customer"),
+            }
+        ),
         freshness_half_life_seconds=7 * 24 * 3600,
         max_age_seconds=30 * 24 * 3600,
     ),
     "crm_note": SourceProfile(
         reliability=0.80,
         authority=0.55,
-        allowed_kinds=frozenset({"ticket_content", "order_record"}),
+        allowed_pairs=frozenset(
+            {
+                ("ticket_content", "ticket_topic"),
+                ("order_record", "duplicate_charge"),
+            }
+        ),
         freshness_half_life_seconds=7 * 24 * 3600,
         max_age_seconds=90 * 24 * 3600,
     ),
     "payments_ledger": SourceProfile(
         reliability=0.995,
         authority=1.00,
-        allowed_kinds=frozenset({"payment_ledger"}),
+        allowed_pairs=frozenset(
+            {
+                ("payment_ledger", "payment_settled"),
+                ("payment_ledger", "duplicate_charge"),
+                ("payment_ledger", "chargeback_open"),
+            }
+        ),
         freshness_half_life_seconds=90 * 24 * 3600,
         max_age_seconds=365 * 24 * 3600,
     ),
     "orders_service": SourceProfile(
         reliability=0.99,
         authority=0.95,
-        allowed_kinds=frozenset({"order_record"}),
+        allowed_pairs=frozenset({("order_record", "order_exists")}),
         freshness_half_life_seconds=30 * 24 * 3600,
         max_age_seconds=180 * 24 * 3600,
     ),
     "ci_pipeline": SourceProfile(
         reliability=0.995,
         authority=1.00,
-        allowed_kinds=frozenset({"ci_results"}),
+        allowed_pairs=frozenset({("ci_results", "ci_status")}),
         freshness_half_life_seconds=12 * 3600,
         max_age_seconds=7 * 24 * 3600,
     ),
     "deployment_service": SourceProfile(
         reliability=0.995,
         authority=0.98,
-        allowed_kinds=frozenset({"deployment_manifest", "release_metadata"}),
+        allowed_pairs=frozenset(
+            {
+                ("deployment_manifest", "target_environment"),
+                ("deployment_manifest", "rollback_available"),
+                ("release_metadata", "change_risk"),
+                ("release_metadata", "database_migration"),
+                ("release_metadata", "backup_available"),
+            }
+        ),
         freshness_half_life_seconds=7 * 24 * 3600,
         max_age_seconds=30 * 24 * 3600,
     ),
     "incident_service": SourceProfile(
         reliability=0.99,
         authority=0.95,
-        allowed_kinds=frozenset({"incident_status"}),
+        allowed_pairs=frozenset(
+            {
+                ("incident_status", "incident_active"),
+                ("incident_status", "approved_hotfix"),
+            }
+        ),
         freshness_half_life_seconds=3600,
         max_age_seconds=24 * 3600,
     ),
     "risk_service": SourceProfile(
         reliability=0.97,
         authority=0.90,
-        allowed_kinds=frozenset({"risk_record"}),
+        allowed_pairs=frozenset(
+            {
+                ("risk_record", "customer_risk"),
+                ("risk_record", "legal_hold"),
+            }
+        ),
         freshness_half_life_seconds=12 * 3600,
         max_age_seconds=7 * 24 * 3600,
     ),
 }
 
 
-def source_profile(source: str, kind: str) -> SourceProfile | None:
+def source_profile(source: str, kind: str, claim: str) -> SourceProfile | None:
     profile = SOURCE_PROFILES.get(source)
-    if profile is None or kind not in profile.allowed_kinds:
+    if profile is None or (kind, claim) not in profile.allowed_pairs:
         return None
     return profile
 

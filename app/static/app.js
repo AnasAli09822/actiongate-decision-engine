@@ -119,6 +119,15 @@ function renderAudit(audit) {
     hash.textContent = `sha256 ${event.event_hash.slice(0, 24)}…`;
     summary.appendChild(hash);
 
+    const disclosure = document.createElement("details");
+    disclosure.className = "audit-details";
+    const disclosureLabel = document.createElement("summary");
+    disclosureLabel.textContent = "view event payload";
+    const payload = document.createElement("pre");
+    payload.textContent = pretty(event.payload);
+    disclosure.append(disclosureLabel, payload);
+    summary.appendChild(disclosure);
+
     row.append(seq, stage, summary);
     timeline.appendChild(row);
   });
@@ -170,7 +179,7 @@ async function boot() {
   state.scenarios.forEach((scenario) => {
     const option = document.createElement("option");
     option.value = scenario.id;
-    option.textContent = `${scenario.title} → ${scenario.expected_decision}`;
+    option.textContent = scenario.title;
     select.appendChild(option);
   });
   loadScenario();
