@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation
+
 from app.engine.evidence import EvidenceAnalysis
 from app.engine.types import DomainAssessment
 from app.schemas import CostLevel, DecisionRequest
 
-POLICY_VERSION = "refund-approval-v2.1"
+POLICY_VERSION = "refund-approval-v2.2"
 REQUIRED_CLAIMS = ["payment_settled", "order_exists", "chargeback_open", "legal_hold", "customer_risk"]
-AUTO_EXECUTE_LIMIT = 500.0
-MANUAL_REVIEW_LIMIT = 5000.0
+AUTO_EXECUTE_LIMIT = Decimal("500.00")
+MANUAL_REVIEW_LIMIT = Decimal("5000.00")
 
 
 def required_claims(request: DecisionRequest) -> list[str]:
@@ -49,11 +51,37 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
     if not currency:
         missing.append("currency")
 
-    try:
-        numeric_amount = float(amount) if amount is not None else 0.0
-    except (TypeError, ValueError):
-        numeric_amount = 0.0
-        missing.append("valid_amount")
+    numeric_amount = Decimal("0")
+    if amount is not None:
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)):
+            return DomainAssessment(
+                base_risk=1.0,
+                reversibility_score=0.10,
+                cost_of_error=CostLevel.HIGH,
+                refusal_reasons=["INVALID_REFUND_AMOUNT"],
+                required_claims=policy_claims,
+                risk_factors=risk_factors + ["INVALID_FINANCIAL_AMOUNT"],
+            )
+        try:
+            numeric_amount = Decimal(str(amount))
+        except (InvalidOperation, ValueError):
+            return DomainAssessment(
+                base_risk=1.0,
+                reversibility_score=0.10,
+                cost_of_error=CostLevel.HIGH,
+                refusal_reasons=["INVALID_REFUND_AMOUNT"],
+                required_claims=policy_claims,
+                risk_factors=risk_factors + ["INVALID_FINANCIAL_AMOUNT"],
+            )
+        if not numeric_amount.is_finite():
+            return DomainAssessment(
+                base_risk=1.0,
+                reversibility_score=0.10,
+                cost_of_error=CostLevel.HIGH,
+                refusal_reasons=["NON_FINITE_REFUND_AMOUNT"],
+                required_claims=policy_claims,
+                risk_factors=risk_factors + ["INVALID_FINANCIAL_AMOUNT"],
+            )
 
     if numeric_amount <= 0 and amount is not None:
         return DomainAssessment(
@@ -120,7 +148,7 @@ def assess(request: DecisionRequest, evidence: EvidenceAnalysis) -> DomainAssess
         reasons.append("PROPOSED_ACTION_CONFLICTS_WITH_RESOLVED_EVIDENCE")
         risk_factors.append("REFUND_REASON_EVIDENCE_MISMATCH")
 
-    amount_factor = min(numeric_amount / MANUAL_REVIEW_LIMIT, 1.0) * 0.42
+    amount_factor = min(float(numeric_amount / MANUAL_REVIEW_LIMIT), 1.0) * 0.42
     base_risk = 0.28 + amount_factor
 
     if numeric_amount > AUTO_EXECUTE_LIMIT:

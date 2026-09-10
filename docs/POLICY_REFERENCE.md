@@ -10,11 +10,11 @@ Domain policy is explicit and versioned in code. Scores support decisions but ne
 - A proposed route that disagrees with the strongest ticket-topic evidence returns `ask`.
 - Closing a VIP or safety-related ticket escalates.
 
-## Refund approval — `refund-approval-v2.1`
+## Refund approval — `refund-approval-v2.2`
 
 - Supported action: `refund`.
 - Credible `payment_settled`, `order_exists`, `chargeback_open`, `legal_hold`, and `customer_risk` claims are required; duplicate-charge refunds additionally require a credible `duplicate_charge` claim.
-- Amount must be positive and currency and reason must be supplied.
+- Amount must be a finite JSON number greater than zero; string/NaN/Infinity values are refused. Currency and reason must be supplied.
 - Legal holds, open chargebacks, and authoritative evidence that the order does not exist are hard refusals.
 - Unsettled payment state returns `defer`.
 - A duplicate-charge refund contradicted by the resolved ledger fact escalates.
@@ -48,3 +48,7 @@ residual risk / confidence safety net → escalate
     ↓
 execute
 ```
+
+## Cross-domain actor authority
+
+Before a domain result can execute, the server-side actor registry verifies that the proposing agent is registered for the requested domain/action pair and environment. Unknown actors or cross-domain capability violations are hard authorization failures and return `refuse`. Caller-supplied role or confidence fields cannot grant authority.

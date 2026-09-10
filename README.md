@@ -62,7 +62,7 @@ execute / ask / defer / escalate / refuse
 append-only, hash-chained audit trail
 ```
 
-The request cannot assign itself reliability or authority scores. Those are defined in the server-side source registry. Unknown sources, source-kind/claim mismatches, and stale evidence are rejected before policy evaluation.
+The request cannot assign itself reliability or authority scores. Those are defined in the server-side source registry. Unknown sources, source-kind/claim mismatches, stale evidence, and malformed claim values are rejected before policy evaluation. Claim contracts enforce booleans, enums, and normalized text values. A separate server-side actor registry also checks whether the proposing agent is authorized for the requested domain, action, and environment.
 
 See [Architecture](docs/ARCHITECTURE.md), [Signal model](docs/SCORING_MODEL.md), [Policy reference](docs/POLICY_REFERENCE.md), and [Design decisions](docs/DESIGN_DECISIONS.md).
 
@@ -81,11 +81,11 @@ See [Failure test](docs/FAILURE_TEST.md).
 
 ## Evaluation
 
-The repository includes a fixed 20-case synthetic evaluation suite across all five outcomes.
+The repository includes a fixed 24-case synthetic evaluation suite across all five outcomes.
 
 ```text
-exact decision accuracy: 20/20 (100.0%)
-unsafe execute rate:     0/17 (0.0%)
+exact decision accuracy: 24/24 (100.0%)
+unsafe execute rate:     0/21 (0.0%)
 unnecessary block rate:  0/3  (0.0%)
 ```
 
@@ -168,6 +168,8 @@ app/
     evidence.py            evidence validation and conflict resolution
     signals.py             cross-domain signals
     source_registry.py     server-controlled source trust
+    claim_contracts.py     typed claim validation and normalization
+    actor_registry.py      server-controlled agent capability boundaries
     service.py             end-to-end decision pipeline
   static/                  live demo UI
   audit.py                 append-only hash-chained audit store

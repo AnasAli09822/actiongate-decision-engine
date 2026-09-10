@@ -9,6 +9,8 @@ The proposing agent may be wrong, overconfident, incomplete, or compromised. The
 | Agent uses an unknown source name | Unknown sources are rejected. |
 | Agent labels a support record as payment-ledger evidence | Source-kind-claim allowlists reject the mismatch. |
 | A trusted source asserts a claim outside its contract | Source claim allowlists reject the evidence before policy evaluation. |
+| A source sends string `"true"`/`"false"` for a boolean safety fact | Claim contracts reject malformed booleans instead of relying on language truthiness/coercion. |
+| An agent attempts an action outside its registered capability | Server-side actor registry returns a hard authorization refusal. |
 | Evidence is stale | Freshness is computed from `observed_at`; evidence beyond the source's maximum age is rejected. |
 | Agent omits required evidence | Missing required claims are surfaced explicitly and autonomous execution is blocked. |
 | Context says CI passed while CI evidence says failed | The registered CI source resolves the fact; failed CI triggers a hard refusal. |

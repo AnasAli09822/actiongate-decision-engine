@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from uuid import uuid4
 
 from app.audit import append_event
 from app.domains import DOMAIN_MODULES
+from app.engine.actor_registry import authorize_actor
 from app.engine.decision import decide
 from app.engine.evidence import analyze_evidence
 from app.engine.signals import compute_signals
@@ -44,11 +46,29 @@ def evaluate(request: DecisionRequest) -> DecisionResponse:
     )
 
     assessment = module.assess(request, evidence)
+    authorization = authorize_actor(
+        request.context.actor,
+        request.action.domain.value,
+        request.action.type,
+        request.context.environment,
+    )
+    if not authorization.authorized:
+        assessment = replace(
+            assessment,
+            base_risk=max(assessment.base_risk, 0.95),
+            refusal_reasons=list(dict.fromkeys(assessment.refusal_reasons + list(authorization.reason_codes))),
+            risk_factors=list(dict.fromkeys(assessment.risk_factors + ["ACTOR_AUTHORIZATION_DENIED"])),
+        )
+
     append_event(
         decision_id,
         "domain_assessed",
         {
             "base_risk": assessment.base_risk,
+            "actor_authorization": {
+                "authorized": authorization.authorized,
+                "reason_codes": list(authorization.reason_codes),
+            },
             "reversibility_score": assessment.reversibility_score,
             "cost_of_error": assessment.cost_of_error.value,
             "missing_information": assessment.missing_information,

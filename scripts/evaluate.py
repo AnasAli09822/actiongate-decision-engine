@@ -120,6 +120,24 @@ def build_cases() -> list[EvalCase]:
     irreversible_migration.context.evidence.append(backup)
     cases.append(EvalCase("irreversible-migration-no-backup", "refuse", irreversible_migration))
 
+    malformed_chargeback = case("refund-high-value")
+    malformed_chargeback.action.parameters["amount"] = 120
+    next(e for e in malformed_chargeback.context.evidence if e.claim == "chargeback_open").value = "true"
+    cases.append(EvalCase("malformed-boolean-chargeback", "ask", malformed_chargeback))
+
+    invalid_ci = case("deploy-tests-running")
+    next(e for e in invalid_ci.context.evidence if e.claim == "ci_status").value = "green"
+    cases.append(EvalCase("invalid-ci-enum", "ask", invalid_ci))
+
+    cross_domain_actor = case("refund-high-value")
+    cross_domain_actor.action.parameters["amount"] = 120
+    cross_domain_actor.context.actor = "support-agent-7"
+    cases.append(EvalCase("cross-domain-actor", "refuse", cross_domain_actor))
+
+    unknown_actor = case("ticket-clear-route")
+    unknown_actor.context.actor = "unregistered-agent"
+    cases.append(EvalCase("unknown-actor", "refuse", unknown_actor))
+
     return cases
 
 
