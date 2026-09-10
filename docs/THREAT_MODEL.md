@@ -13,6 +13,7 @@ The proposing agent may be wrong, overconfident, incomplete, or compromised. The
 | An agent attempts an action outside its registered capability | Server-side actor registry returns a hard authorization refusal. |
 | Evidence is stale | Freshness is computed from `observed_at`; evidence beyond the source's maximum age is rejected. |
 | Agent omits required evidence | Missing required claims are surfaced explicitly and autonomous execution is blocked. |
+| Agent changes a refund reason to avoid reason-specific evidence | Refund reasons are allowlisted; unsupported reasons are refused. |
 | Context says CI passed while CI evidence says failed | The registered CI source resolves the fact; failed CI triggers a hard refusal. |
 | Numerical scores drift high | Hard rules run before score-based safety nets. |
 | Decision record is edited through the application database path | SQLite triggers reject updates and deletes. |
