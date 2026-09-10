@@ -17,7 +17,7 @@ def compute_signals(assessment: DomainAssessment, evidence: EvidenceAnalysis) ->
     missing = list(
         dict.fromkeys(
             assessment.missing_information
-            + [f"evidence:{kind}" for kind in evidence.missing_required_kinds]
+            + [f"evidence:{claim}" for claim in evidence.missing_required_claims]
         )
     )
 

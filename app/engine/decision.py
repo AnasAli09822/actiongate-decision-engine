@@ -39,15 +39,6 @@ def decide(assessment: DomainAssessment, signals: SignalSnapshot) -> DecisionRes
             "Route the case to an authorized reviewer with the conflicting evidence attached.",
         )
 
-    if assessment.defer_reasons:
-        reasons.extend(assessment.defer_reasons)
-        return DecisionResult(
-            Decision.DEFER,
-            _unique(reasons),
-            "A pending system state is expected to create or materially change the evidence. Waiting is safer than asking or guessing.",
-            "Re-evaluate automatically when the pending system state reaches a terminal result.",
-        )
-
     if signals.missing_information or signals.evidence_conflicts:
         if signals.evidence_conflicts:
             reasons.append("EVIDENCE_CONFLICT_REQUIRES_CLARIFICATION")
@@ -58,6 +49,15 @@ def decide(assessment: DomainAssessment, signals: SignalSnapshot) -> DecisionRes
             _unique(reasons),
             "A specific fact is missing or unresolved and can be supplied now before a safe decision is made.",
             "Request only the listed missing facts, then re-run the same proposed action with the new evidence snapshot.",
+        )
+
+    if assessment.defer_reasons:
+        reasons.extend(assessment.defer_reasons)
+        return DecisionResult(
+            Decision.DEFER,
+            _unique(reasons),
+            "A pending system state is expected to create or materially change the evidence. Waiting is safer than guessing.",
+            "Re-evaluate automatically when the pending system state reaches a terminal result.",
         )
 
     if assessment.escalation_reasons:

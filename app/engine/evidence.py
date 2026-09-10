@@ -36,7 +36,7 @@ class EvidenceAnalysis:
     authoritative_conflicts: list[str]
     facts: dict[str, Any]
     fact_sources: dict[str, str]
-    missing_required_kinds: list[str]
+    missing_required_claims: list[str]
     evaluated: list[EvaluatedEvidence]
 
 
@@ -46,12 +46,12 @@ def _canonical(value: Any) -> str:
     return str(value).strip().lower()
 
 
-def analyze_evidence(items: list[EvidenceItem], required_kinds: list[str]) -> EvidenceAnalysis:
+def analyze_evidence(items: list[EvidenceItem], required_claims: list[str]) -> EvidenceAnalysis:
     evaluated: list[EvaluatedEvidence] = []
     accepted: list[tuple[EvidenceItem, EvaluatedEvidence]] = []
 
     for item in items:
-        profile = source_profile(item.source, item.kind)
+        profile = source_profile(item.source, item.kind, item.claim)
         if profile is None:
             entry = EvaluatedEvidence(
                 id=item.id,
@@ -63,7 +63,7 @@ def analyze_evidence(items: list[EvidenceItem], required_kinds: list[str]) -> Ev
                 authority=0.0,
                 freshness=0.0,
                 effective_weight=0.0,
-                rejection_reason="UNREGISTERED_SOURCE_OR_KIND",
+                rejection_reason="UNREGISTERED_SOURCE_KIND_OR_CLAIM",
             )
             evaluated.append(entry)
             continue
@@ -118,14 +118,14 @@ def analyze_evidence(items: list[EvidenceItem], required_kinds: list[str]) -> Ev
             ):
                 authoritative_conflicts.append(claim)
 
-    credible_kinds = {
-        item.kind
+    credible_claims = {
+        item.claim
         for item, entry in accepted
         if entry.effective_weight >= CREDIBLE_WEIGHT
     }
-    missing_required = sorted(set(required_kinds) - credible_kinds)
-    coverage = 1.0 if not required_kinds else (
-        (len(required_kinds) - len(missing_required)) / len(required_kinds)
+    missing_required = sorted(set(required_claims) - credible_claims)
+    coverage = 1.0 if not required_claims else (
+        (len(required_claims) - len(missing_required)) / len(required_claims)
     )
     quality = sum(resolved_weights) / len(resolved_weights) if resolved_weights else 0.0
     conflict_penalty = min(0.45, 0.18 * len(conflicts))
@@ -135,8 +135,16 @@ def analyze_evidence(items: list[EvidenceItem], required_kinds: list[str]) -> Ev
         min(1.0, (0.60 * quality) + (0.40 * coverage) - conflict_penalty - rejection_penalty),
     )
 
-    used_ids = [entry.id for entry in evaluated if entry.rejection_reason is None and entry.effective_weight >= CREDIBLE_WEIGHT]
-    rejected_ids = [entry.id for entry in evaluated if entry.rejection_reason is not None or entry.effective_weight < CREDIBLE_WEIGHT]
+    used_ids = [
+        entry.id
+        for entry in evaluated
+        if entry.rejection_reason is None and entry.effective_weight >= CREDIBLE_WEIGHT
+    ]
+    rejected_ids = [
+        entry.id
+        for entry in evaluated
+        if entry.rejection_reason is not None or entry.effective_weight < CREDIBLE_WEIGHT
+    ]
 
     return EvidenceAnalysis(
         strength=round(strength, 3),
@@ -146,6 +154,6 @@ def analyze_evidence(items: list[EvidenceItem], required_kinds: list[str]) -> Ev
         authoritative_conflicts=sorted(authoritative_conflicts),
         facts=facts,
         fact_sources=fact_sources,
-        missing_required_kinds=missing_required,
+        missing_required_claims=missing_required,
         evaluated=evaluated,
     )
