@@ -23,3 +23,11 @@ Failed CI, legal hold, and other terminal boundaries are evaluated before any co
 ## Audit data is append-only in the application boundary
 
 The repository uses SQLite triggers plus a SHA-256 event chain. This is deliberately simpler than an external transparency log while still making ordinary mutation impossible and direct tampering detectable.
+
+## Typed claim contracts
+
+Evidence values are validated per claim before policy evaluation. The engine intentionally rejects malformed booleans and unknown enum values rather than coercing them, because coercion can invert a safety decision.
+
+## Actor capability registry
+
+Agent identity is not treated as descriptive metadata. The decision service owns a capability registry for domain/action/environment authorization. This keeps authorization distinct from confidence and evidence quality.
