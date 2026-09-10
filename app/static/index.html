@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="ActionGate is a context-aware decision layer for consequential AI agent actions." />
+  <title>ActionGate — Decision Engine</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">DECISION LAYER FOR AGENT ACTIONS</div>
+        <h1>ActionGate</h1>
+        <p class="subhead">The agent proposes. The decision layer decides. The executor enforces.</p>
+      </div>
+      <div class="status"><span class="dot"></span> deterministic policy core</div>
+    </header>
+
+    <section class="outcome-legend" aria-label="Decision outcomes">
+      <div><strong>execute</strong><span>safe to act now</span></div>
+      <div><strong>ask</strong><span>obtain a fact now</span></div>
+      <div><strong>defer</strong><span>wait for state change</span></div>
+      <div><strong>escalate</strong><span>higher authority required</span></div>
+      <div><strong>refuse</strong><span>hard boundary crossed</span></div>
+    </section>
+
+    <section class="scenario-bar">
+      <label for="scenarioSelect">Scenario</label>
+      <select id="scenarioSelect"></select>
+      <button id="loadBtn" class="secondary">Reset</button>
+      <button id="runBtn" class="primary">Run decision</button>
+      <div id="scenarioNote" class="scenario-note"></div>
+    </section>
+
+    <section class="grid">
+      <article class="panel request-panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">INPUT</div>
+            <h2>Proposed action + context</h2>
+          </div>
+          <span id="domainTag" class="tag">—</span>
+        </div>
+        <textarea id="requestEditor" spellcheck="false" aria-label="Decision request JSON"></textarea>
+        <div id="editorError" class="error hidden"></div>
+      </article>
+
+      <article class="panel result-panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">OUTCOME</div>
+            <h2>Decision</h2>
+          </div>
+          <span id="policyVersion" class="tag">—</span>
+        </div>
+
+        <div class="decision-wrap">
+          <div id="decisionBadge" class="decision idle">READY</div>
+          <div id="decisionRationale" class="rationale">Run a scenario to evaluate the action.</div>
+          <div class="next-step"><span>Next step</span><p id="nextStep">—</p></div>
+        </div>
+
+        <div class="signal-grid">
+          <div class="metric">
+            <span>Confidence</span>
+            <strong id="confidence">—</strong>
+            <div class="bar"><i id="confidenceBar"></i></div>
+          </div>
+          <div class="metric">
+            <span>Risk</span>
+            <strong id="risk">—</strong>
+            <div class="bar"><i id="riskBar"></i></div>
+          </div>
+          <div class="metric">
+            <span>Evidence strength</span>
+            <strong id="evidenceStrength">—</strong>
+            <div class="bar"><i id="evidenceBar"></i></div>
+          </div>
+          <div class="metric compact">
+            <span>Reversibility</span>
+            <strong id="reversibility">—</strong>
+          </div>
+          <div class="metric compact">
+            <span>Cost of error</span>
+            <strong id="costOfError">—</strong>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-block">
+            <h3>Evidence used</h3>
+            <div id="evidenceUsed" class="chips"><span class="muted">—</span></div>
+          </div>
+          <div class="detail-block">
+            <h3>Evidence rejected</h3>
+            <div id="evidenceRejected" class="chips"><span class="muted">—</span></div>
+          </div>
+          <div class="detail-block">
+            <h3>Evidence conflicts</h3>
+            <div id="evidenceConflicts" class="chips"><span class="muted">—</span></div>
+          </div>
+          <div class="detail-block">
+            <h3>Missing information</h3>
+            <div id="missingInfo" class="chips"><span class="muted">—</span></div>
+          </div>
+          <div class="detail-block span-two">
+            <h3>Risk factors</h3>
+            <div id="riskFactors" class="chips"><span class="muted">—</span></div>
+          </div>
+          <div class="detail-block span-two">
+            <h3>Reason codes</h3>
+            <div id="reasonCodes" class="chips"><span class="muted">—</span></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel facts-panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">EVIDENCE RESOLUTION</div>
+          <h2>Resolved facts</h2>
+        </div>
+        <div class="trust-note">source trust is server-controlled</div>
+      </div>
+      <pre id="resolvedFacts" class="facts"><span class="muted">No decision yet.</span></pre>
+    </section>
+
+    <section class="panel audit-panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">AUDIT</div>
+          <h2>Decision trail</h2>
+        </div>
+        <div id="auditIntegrity" class="integrity">No decision yet</div>
+      </div>
+      <div id="auditTimeline" class="timeline">
+        <div class="empty">Input, evidence resolution, domain assessment, signals, and outcome will appear here.</div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Three domains: ticket triage · refund approval · production deploy</span>
+      <span><a href="/docs" target="_blank" rel="noreferrer">OpenAPI</a> · <a href="/api/health" target="_blank" rel="noreferrer">health</a></span>
+    </footer>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

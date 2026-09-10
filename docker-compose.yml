@@ -1,0 +1,12 @@
+services:
+  actiongate:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ACTIONGATE_DB: /app/data/actiongate.db
+    volumes:
+      - actiongate_data:/app/data
+
+volumes:
+  actiongate_data:

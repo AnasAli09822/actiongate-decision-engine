@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <rect width="1200" height="700" fill="#0b0c0e"/>
+  <style>
+    .box { fill:#14171c; stroke:#343942; stroke-width:2; rx:12; }
+    .title { fill:#f3f5f7; font:700 20px Arial,sans-serif; }
+    .text { fill:#aeb5c0; font:14px Arial,sans-serif; }
+    .small { fill:#7f8793; font:12px Arial,sans-serif; }
+    .line { stroke:#59616e; stroke-width:2; fill:none; marker-end:url(#arrow); }
+    .pill { fill:#1a1e24; stroke:#3a404a; stroke-width:1.5; rx:18; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#59616e"/>
+    </marker>
+  </defs>
+
+  <text x="54" y="54" class="title">ActionGate — decision boundary for consequential agent actions</text>
+  <text x="54" y="80" class="small">Proposal → trusted evidence resolution → domain policy → signals → operational decision → audit</text>
+
+  <rect x="35" y="125" width="170" height="120" class="box"/>
+  <text x="57" y="164" class="title">Proposal</text>
+  <text x="57" y="194" class="text">action + target</text>
+  <text x="57" y="219" class="text">actor + context</text>
+
+  <rect x="240" y="105" width="210" height="160" class="box"/>
+  <text x="262" y="144" class="title">Source trust</text>
+  <text x="262" y="174" class="text">server-controlled registry</text>
+  <text x="262" y="199" class="text">source-kind validation</text>
+  <text x="262" y="224" class="text">freshness from timestamp</text>
+  <text x="262" y="249" class="text">reject untrusted evidence</text>
+
+  <rect x="485" y="105" width="205" height="160" class="box"/>
+  <text x="507" y="144" class="title">Evidence</text>
+  <text x="507" y="174" class="text">coverage + quality</text>
+  <text x="507" y="199" class="text">conflict detection</text>
+  <text x="507" y="224" class="text">resolved facts</text>
+  <text x="507" y="249" class="text">provenance retained</text>
+
+  <rect x="725" y="105" width="190" height="160" class="box"/>
+  <text x="747" y="144" class="title">Policy</text>
+  <text x="747" y="174" class="text">hard boundaries</text>
+  <text x="747" y="199" class="text">pending states</text>
+  <text x="747" y="224" class="text">missing facts</text>
+  <text x="747" y="249" class="text">authority thresholds</text>
+
+  <rect x="950" y="105" width="215" height="160" class="box"/>
+  <text x="972" y="144" class="title">Signals</text>
+  <text x="972" y="174" class="text">confidence + risk</text>
+  <text x="972" y="199" class="text">evidence strength</text>
+  <text x="972" y="224" class="text">reversibility</text>
+  <text x="972" y="249" class="text">cost + missing info</text>
+
+  <path d="M205 185 L240 185" class="line"/>
+  <path d="M450 185 L485 185" class="line"/>
+  <path d="M690 185 L725 185" class="line"/>
+  <path d="M915 185 L950 185" class="line"/>
+
+  <rect x="440" y="315" width="320" height="92" class="box"/>
+  <text x="462" y="352" class="title">Decision engine</text>
+  <text x="462" y="380" class="text">explicit precedence + stable reason codes</text>
+  <path d="M1058 265 C1058 295 760 287 760 345" class="line"/>
+
+  <rect x="120" y="455" width="155" height="48" class="pill"/>
+  <text x="169" y="486" class="text">execute</text>
+  <rect x="300" y="455" width="155" height="48" class="pill"/>
+  <text x="355" y="486" class="text">ask</text>
+  <rect x="480" y="455" width="155" height="48" class="pill"/>
+  <text x="532" y="486" class="text">defer</text>
+  <rect x="660" y="455" width="155" height="48" class="pill"/>
+  <text x="702" y="486" class="text">escalate</text>
+  <rect x="840" y="455" width="155" height="48" class="pill"/>
+  <text x="890" y="486" class="text">refuse</text>
+  <path d="M600 407 L600 438" class="line"/>
+
+  <rect x="245" y="565" width="710" height="105" class="box"/>
+  <text x="267" y="603" class="title">Append-only, hash-chained audit</text>
+  <text x="267" y="632" class="text">input → evidence resolution → domain assessment → signals → outcome</text>
+  <text x="267" y="657" class="small">SQLite mutation guards + SHA-256 continuity verification</text>
+  <path d="M600 503 L600 565" class="line"/>
+</svg>
