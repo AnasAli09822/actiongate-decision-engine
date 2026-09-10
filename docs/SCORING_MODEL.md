@@ -8,7 +8,7 @@ Evidence does not carry client-supplied trust scores. A server-side source profi
 
 - reliability;
 - authority;
-- permitted evidence kinds;
+- permitted evidence kinds and claims;
 - freshness half-life;
 - maximum acceptable age.
 
@@ -33,12 +33,12 @@ For each claim, the strongest credible item becomes the resolved fact. Credible 
 ```text
 evidence_strength =
     0.60 × resolved_evidence_quality
-  + 0.40 × required_evidence_coverage
+  + 0.40 × required_claim_coverage
   - conflict_penalty
   - rejected_evidence_penalty
 ```
 
-A required evidence kind is covered only by a registered source whose effective weight meets the credibility threshold.
+A required claim is covered only by a registered source that is permitted to assert that claim and whose effective weight meets the credibility threshold.
 
 ## Confidence
 

@@ -7,9 +7,10 @@ The proposing agent may be wrong, overconfident, incomplete, or compromised. The
 | Agent reports high confidence despite contradictory records | Agent-reported confidence is not an authority signal; evidence conflicts are evaluated independently. |
 | Agent assigns itself a trusted source score | Request schema does not accept reliability, authority, or freshness scores. Source trust is server-controlled. |
 | Agent uses an unknown source name | Unknown sources are rejected. |
-| Agent labels a support record as payment-ledger evidence | Source-kind allowlists reject the mismatch. |
+| Agent labels a support record as payment-ledger evidence | Source-kind-claim allowlists reject the mismatch. |
+| A trusted source asserts a claim outside its contract | Source claim allowlists reject the evidence before policy evaluation. |
 | Evidence is stale | Freshness is computed from `observed_at`; evidence beyond the source's maximum age is rejected. |
-| Agent omits required evidence | Missing evidence kinds are surfaced explicitly and autonomous execution is blocked. |
+| Agent omits required evidence | Missing required claims are surfaced explicitly and autonomous execution is blocked. |
 | Context says CI passed while CI evidence says failed | The registered CI source resolves the fact; failed CI triggers a hard refusal. |
 | Numerical scores drift high | Hard rules run before score-based safety nets. |
 | Decision record is edited through the application database path | SQLite triggers reject updates and deletes. |
